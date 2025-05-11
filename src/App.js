@@ -1,103 +1,132 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import './App.css';
 
 function App() {
-  const [jsonInput, setJsonInput] = useState('');
+  const [inputData, setInputData] = useState('{ "data": ["M", "1", "334", "4", "B"] }');
   const [response, setResponse] = useState(null);
-  const [visibleSections, setVisibleSections] = useState([]);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showCharacters, setShowCharacters] = useState(true);
+  const [showNumbers, setShowNumbers] = useState(true);
+  const [showHighestAlphabet, setShowHighestAlphabet] = useState(true);
 
-  const handleSubmit = async () => {
+  const handleChange = (e) => {
+    setInputData(e.target.value);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
     try {
-      const parsed = JSON.parse(jsonInput);
-      const res = await axios.post(
-        'https://bfhl-backend-bu7d.onrender.com/bfhl',
-        parsed
-      );
-      setResponse(res.data);
+      // Validate JSON input
+      const parsedData = JSON.parse(inputData);
+      
+      // Call your API - Make sure this is your deployed backend URL
+      const apiUrl = 'https://bfhl-backend-bu7d.onrender.com/bfhl';
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(parsedData)
+      });
+      
+      const data = await response.json();
+      console.log("API Response:", data); // Debug log
+      
+      setResponse(data);
     } catch (err) {
-      alert('Invalid JSON or server error');
+      if (err instanceof SyntaxError) {
+        setError('Invalid JSON format. Please check your input.');
+      } else {
+        setError('Error processing your request: ' + err.message);
+      }
       console.error(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const toggleSection = (section) => {
-    setVisibleSections((prev) =>
-      prev.includes(section)
-        ? prev.filter((s) => s !== section)
-        : [...prev, section]
-    );
-  };
-
   return (
-    <div style={{ padding: 20 }}>
+    <div className="App">
       <h1>BFHL Fullstack App</h1>
-
-      <textarea
-        rows={4}
-        cols={60}
-        value={jsonInput}
-        onChange={(e) => setJsonInput(e.target.value)}
-        placeholder='Enter JSON like: { "data": ["A", "1", "B"] }'
-      />
-      <br />
-      <button onClick={handleSubmit}>Submit</button>
-
+      
+      <div className="input-container">
+        <textarea
+          value={inputData}
+          onChange={handleChange}
+          placeholder='Enter JSON data here'
+          rows={5}
+        />
+        <button onClick={handleSubmit} disabled={isLoading}>
+          {isLoading ? 'Processing...' : 'Submit'}
+        </button>
+      </div>
+      
+      {error && <div className="error">{error}</div>}
+      
       {response && (
-        <>
-          {/* ==== NEW: Display basic info ==== */}
-          <div style={{ marginTop: 20 }}>
+        <div className="response-container">
+          <div className="user-info">
             <p><strong>User ID:</strong> {response.user_id}</p>
             <p><strong>Email:</strong> {response.email}</p>
             <p><strong>Roll Number:</strong> {response.roll_number}</p>
+            <p><strong>Status:</strong> {response.is_success ? 'Success' : 'Failed'}</p>
           </div>
-
-          {/* ==== Existing Toggle Sections ==== */}
-          <h2 style={{ marginTop: 20 }}>Toggle Sections</h2>
-          <label style={{ marginRight: 10 }}>
-            <input
-              type="checkbox"
-              onChange={() => toggleSection('alphabets')}
-              checked={visibleSections.includes('alphabets')}
-            />{' '}
-            Characters
-          </label>
-          <label style={{ marginRight: 10 }}>
-            <input
-              type="checkbox"
-              onChange={() => toggleSection('numbers')}
-              checked={visibleSections.includes('numbers')}
-            />{' '}
-            Numbers
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              onChange={() => toggleSection('highest_alphabet')}
-              checked={visibleSections.includes('highest_alphabet')}
-            />{' '}
-            Highest Alphabet
-          </label>
-
-          {visibleSections.includes('alphabets') && (
-            <div>
-              <h3>Characters:</h3>
-              <pre>{JSON.stringify(response.alphabets, null, 2)}</pre>
-            </div>
-          )}
-          {visibleSections.includes('numbers') && (
-            <div>
-              <h3>Numbers:</h3>
-              <pre>{JSON.stringify(response.numbers, null, 2)}</pre>
-            </div>
-          )}
-          {visibleSections.includes('highest_alphabet') && (
-            <div>
-              <h3>Highest Alphabet:</h3>
-              <pre>{JSON.stringify(response.highest_alphabet, null, 2)}</pre>
-            </div>
-          )}
-        </>
+          
+          <div className="toggle-sections">
+            <h3>Toggle Sections</h3>
+            <label>
+              <input
+                type="checkbox"
+                checked={showCharacters}
+                onChange={() => setShowCharacters(!showCharacters)}
+              />
+              Characters
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={showNumbers}
+                onChange={() => setShowNumbers(!showNumbers)}
+              />
+              Numbers
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={showHighestAlphabet}
+                onChange={() => setShowHighestAlphabet(!showHighestAlphabet)}
+              />
+              Highest Alphabet
+            </label>
+          </div>
+          
+          <div className="results">
+            {showCharacters && (
+              <div className="result-section">
+                <h3>Characters:</h3>
+                <pre>{JSON.stringify(response.alphabets, null, 2)}</pre>
+              </div>
+            )}
+            
+            {showNumbers && (
+              <div className="result-section">
+                <h3>Numbers:</h3>
+                <pre>{JSON.stringify(response.numbers, null, 2)}</pre>
+              </div>
+            )}
+            
+            {showHighestAlphabet && (
+              <div className="result-section">
+                <h3>Highest Alphabet:</h3>
+                <pre>{JSON.stringify(response.highest_alphabet, null, 2)}</pre>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

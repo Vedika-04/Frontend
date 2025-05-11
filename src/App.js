@@ -2,138 +2,141 @@ import React, { useState } from 'react';
 import './App.css';
 
 function App() {
-  const [inputData, setInputData] = useState('{ "data": ["M", "1", "334", "4", "B"] }');
+  const [input, setInput] = useState('');
   const [response, setResponse] = useState(null);
-  const [error, setError] = useState(null);
-  const [visibleSections, setVisibleSections] = useState({
-    characters: true,
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [activeSections, setActiveSections] = useState({
     numbers: true,
+    alphabets: true,
     highestAlphabet: true
   });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
+  // Use deployed backend URL if available, fallback to localhost
+  const backendUrl = window.location.hostname === 'frontend-pi-six-81.vercel.app' 
+    ? 'https://bfhl-backend-bu7d.onrender.com/bfhl' 
+    : 'http://localhost:3000/bfhl';
+
+  const handleSubmit = async () => {
     try {
-      // Parse the JSON input
-      const parsedData = JSON.parse(inputData);
+      setLoading(true);
+      setError('');
       
-      // Make API call to your backend
-      const response = await fetch('https://bfhl-backend-bu7d.onrender.com/bfhl', {
+      const parsedData = JSON.parse(input);
+      
+      const res = await fetch(backendUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(parsedData),
       });
-
-      const result = await response.json();
-      setResponse(result);
+      
+      const data = await res.json();
+      setResponse(data);
     } catch (err) {
-      setError('Invalid JSON or API error: ' + err.message);
-      console.error(err);
+      setError('Invalid JSON input or server error');
+      setResponse(null);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSectionToggle = (section) => {
-    setVisibleSections({
-      ...visibleSections,
-      [section]: !visibleSections[section]
-    });
+  const toggleSection = (section) => {
+    setActiveSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
   };
 
   return (
-    <div className="App">
-      <h1>BFHL Fullstack App</h1>
+    <div className="app-container">
+      <h1>{ROLL_NUMBER}</h1>
       
-      <textarea
-        value={inputData}
-        onChange={(e) => setInputData(e.target.value)}
-        rows={5}
-        style={{ width: '100%', maxWidth: '800px' }}
-      />
+      <div className="input-container">
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder='Enter JSON data like {"data": ["M","1","334","4","B"]}'
+          rows={5}
+        />
+        <button onClick={handleSubmit} disabled={loading}>
+          {loading ? 'Processing...' : 'Submit'}
+        </button>
+      </div>
       
-      <button onClick={handleSubmit} className="submit-button">Submit</button>
-      
-      {error && <div className="error">{error}</div>}
+      {error && <div className="error-message">{error}</div>}
       
       {response && (
         <div className="response-container">
           <div className="user-info">
+            <p><strong>Status:</strong> {response.is_success ? 'Success' : 'Failed'}</p>
             <p><strong>User ID:</strong> {response.user_id}</p>
             <p><strong>Email:</strong> {response.email}</p>
             <p><strong>Roll Number:</strong> {response.roll_number}</p>
-            <p><strong>Status:</strong> {response.is_success ? 'Success' : 'Failed'}</p>
           </div>
           
-          <div className="toggle-sections">
-            <h3>Toggle Sections</h3>
+          <div className="section-toggles">
             <label>
               <input
                 type="checkbox"
-                checked={visibleSections.characters}
-                onChange={() => handleSectionToggle('characters')}
-              />
-              Characters
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={visibleSections.numbers}
-                onChange={() => handleSectionToggle('numbers')}
+                checked={activeSections.numbers}
+                onChange={() => toggleSection('numbers')}
               />
               Numbers
             </label>
             <label>
               <input
                 type="checkbox"
-                checked={visibleSections.highestAlphabet}
-                onChange={() => handleSectionToggle('highestAlphabet')}
+                checked={activeSections.alphabets}
+                onChange={() => toggleSection('alphabets')}
+              />
+              Alphabets
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={activeSections.highestAlphabet}
+                onChange={() => toggleSection('highestAlphabet')}
               />
               Highest Alphabet
             </label>
           </div>
           
-          <div className="sections-container">
-            {visibleSections.characters && (
-              <div className="section">
-                <h3>Characters:</h3>
-                <pre>
-                  [
-                  {response.alphabets && response.alphabets.map((char, index) => (
-                    <div key={index}>  "{char}"{index < response.alphabets.length - 1 ? ',' : ''}</div>
+          {activeSections.numbers && (
+            <div className="section">
+              <h3>Numbers</h3>
+              {response.numbers.length > 0 ? (
+                <ul>
+                  {response.numbers.map((num, i) => (
+                    <li key={i}>{num}</li>
                   ))}
-                  ]
-                </pre>
-              </div>
-            )}
-            
-            {visibleSections.numbers && (
-              <div className="section">
-                <h3>Numbers:</h3>
-                <pre>
-                  [
-                  {response.numbers && response.numbers.map((num, index) => (
-                    <div key={index}>  "{num}"{index < response.numbers.length - 1 ? ',' : ''}</div>
+                </ul>
+              ) : <p>No numbers found</p>}
+            </div>
+          )}
+          
+          {activeSections.alphabets && (
+            <div className="section">
+              <h3>Alphabets</h3>
+              {response.alphabets.length > 0 ? (
+                <ul>
+                  {response.alphabets.map((char, i) => (
+                    <li key={i}>{char}</li>
                   ))}
-                  ]
-                </pre>
-              </div>
-            )}
-            
-            {visibleSections.highestAlphabet && (
-              <div className="section">
-                <h3>Highest Alphabet:</h3>
-                <pre>
-                  [
-                  {response.highest_alphabet && response.highest_alphabet.map((char, index) => (
-                    <div key={index}>  "{char}"{index < response.highest_alphabet.length - 1 ? ',' : ''}</div>
-                  ))}
-                  ]
-                </pre>
-              </div>
-            )}
-          </div>
+                </ul>
+              ) : <p>No alphabets found</p>}
+            </div>
+          )}
+          
+          {activeSections.highestAlphabet && (
+            <div className="section">
+              <h3>Highest Alphabet</h3>
+              {response.highest_alphabet && response.highest_alphabet.length > 0 ? (
+                <p>{response.highest_alphabet[0]}</p>
+              ) : <p>No highest alphabet found</p>}
+            </div>
+          )}
         </div>
       )}
     </div>

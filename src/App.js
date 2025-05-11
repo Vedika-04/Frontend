@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import './App.css';
 
 function App() {
+  // Define your constants here
+  const USER_ID = "vedika_joshi_0827CY221066";
+  const EMAIL = "vedikajoshi220951@acropolis.in";
+  const ROLL_NUMBER = "0827CY221066"; // This was missing
+
   const [input, setInput] = useState('');
   const [response, setResponse] = useState(null);
   const [error, setError] = useState('');
@@ -12,8 +17,8 @@ function App() {
     highestAlphabet: true
   });
 
-  // Use deployed backend URL if available, fallback to localhost
-  const backendUrl = window.location.hostname === 'frontend-pi-six-81.vercel.app' 
+  // Use deployed backend URL if in production
+  const backendUrl = process.env.NODE_ENV === 'production' 
     ? 'https://bfhl-backend-bu7d.onrender.com/bfhl' 
     : 'http://localhost:3000/bfhl';
 
@@ -51,8 +56,9 @@ function App() {
 
   return (
     <div className="app-container">
-      <h1>{ROLL_NUMBER}</h1>
+      <h1>{ROLL_NUMBER}</h1> {/* Now properly defined */}
       
+      {/* Rest of your component remains the same */}
       <div className="input-container">
         <textarea
           value={input}

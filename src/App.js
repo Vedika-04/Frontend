@@ -4,66 +4,56 @@ import './App.css';
 function App() {
   const [inputData, setInputData] = useState('{ "data": ["M", "1", "334", "4", "B"] }');
   const [response, setResponse] = useState(null);
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [showCharacters, setShowCharacters] = useState(true);
-  const [showNumbers, setShowNumbers] = useState(true);
-  const [showHighestAlphabet, setShowHighestAlphabet] = useState(true);
-
-  const handleChange = (e) => {
-    setInputData(e.target.value);
-  };
+  const [error, setError] = useState(null);
+  const [visibleSections, setVisibleSections] = useState({
+    characters: true,
+    numbers: true,
+    highestAlphabet: true
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setIsLoading(true);
-
+    setError(null);
     try {
-      // Validate JSON input
+      // Parse the JSON input
       const parsedData = JSON.parse(inputData);
       
-      // Call your API - Make sure this is your deployed backend URL
-      const apiUrl = 'https://bfhl-backend-bu7d.onrender.com/bfhl';
-      const response = await fetch(apiUrl, {
+      // Make API call to your backend
+      const response = await fetch('https://bfhl-backend-bu7d.onrender.com/bfhl', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(parsedData)
+        body: JSON.stringify(parsedData),
       });
-      
-      const data = await response.json();
-      console.log("API Response:", data); // Debug log
-      
-      setResponse(data);
+
+      const result = await response.json();
+      setResponse(result);
     } catch (err) {
-      if (err instanceof SyntaxError) {
-        setError('Invalid JSON format. Please check your input.');
-      } else {
-        setError('Error processing your request: ' + err.message);
-      }
+      setError('Invalid JSON or API error: ' + err.message);
       console.error(err);
-    } finally {
-      setIsLoading(false);
     }
+  };
+
+  const handleSectionToggle = (section) => {
+    setVisibleSections({
+      ...visibleSections,
+      [section]: !visibleSections[section]
+    });
   };
 
   return (
     <div className="App">
       <h1>BFHL Fullstack App</h1>
       
-      <div className="input-container">
-        <textarea
-          value={inputData}
-          onChange={handleChange}
-          placeholder='Enter JSON data here'
-          rows={5}
-        />
-        <button onClick={handleSubmit} disabled={isLoading}>
-          {isLoading ? 'Processing...' : 'Submit'}
-        </button>
-      </div>
+      <textarea
+        value={inputData}
+        onChange={(e) => setInputData(e.target.value)}
+        rows={5}
+        style={{ width: '100%', maxWidth: '800px' }}
+      />
+      
+      <button onClick={handleSubmit} className="submit-button">Submit</button>
       
       {error && <div className="error">{error}</div>}
       
@@ -81,48 +71,66 @@ function App() {
             <label>
               <input
                 type="checkbox"
-                checked={showCharacters}
-                onChange={() => setShowCharacters(!showCharacters)}
+                checked={visibleSections.characters}
+                onChange={() => handleSectionToggle('characters')}
               />
               Characters
             </label>
             <label>
               <input
                 type="checkbox"
-                checked={showNumbers}
-                onChange={() => setShowNumbers(!showNumbers)}
+                checked={visibleSections.numbers}
+                onChange={() => handleSectionToggle('numbers')}
               />
               Numbers
             </label>
             <label>
               <input
                 type="checkbox"
-                checked={showHighestAlphabet}
-                onChange={() => setShowHighestAlphabet(!showHighestAlphabet)}
+                checked={visibleSections.highestAlphabet}
+                onChange={() => handleSectionToggle('highestAlphabet')}
               />
               Highest Alphabet
             </label>
           </div>
           
-          <div className="results">
-            {showCharacters && (
-              <div className="result-section">
+          <div className="sections-container">
+            {visibleSections.characters && (
+              <div className="section">
                 <h3>Characters:</h3>
-                <pre>{JSON.stringify(response.alphabets, null, 2)}</pre>
+                <pre>
+                  [
+                  {response.alphabets && response.alphabets.map((char, index) => (
+                    <div key={index}>  "{char}"{index < response.alphabets.length - 1 ? ',' : ''}</div>
+                  ))}
+                  ]
+                </pre>
               </div>
             )}
             
-            {showNumbers && (
-              <div className="result-section">
+            {visibleSections.numbers && (
+              <div className="section">
                 <h3>Numbers:</h3>
-                <pre>{JSON.stringify(response.numbers, null, 2)}</pre>
+                <pre>
+                  [
+                  {response.numbers && response.numbers.map((num, index) => (
+                    <div key={index}>  "{num}"{index < response.numbers.length - 1 ? ',' : ''}</div>
+                  ))}
+                  ]
+                </pre>
               </div>
             )}
             
-            {showHighestAlphabet && (
-              <div className="result-section">
+            {visibleSections.highestAlphabet && (
+              <div className="section">
                 <h3>Highest Alphabet:</h3>
-                <pre>{JSON.stringify(response.highest_alphabet, null, 2)}</pre>
+                <pre>
+                  [
+                  {response.highest_alphabet && response.highest_alphabet.map((char, index) => (
+                    <div key={index}>  "{char}"{index < response.highest_alphabet.length - 1 ? ',' : ''}</div>
+                  ))}
+                  ]
+                </pre>
               </div>
             )}
           </div>

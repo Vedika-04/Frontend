@@ -10,7 +10,10 @@ function App() {
   const handleSubmit = async () => {
     try {
       const parsed = JSON.parse(jsonInput);
-      const res = await axios.post('https://bfhl-backend-bu7d.onrender.com/bfhl', parsed);
+      const res = await axios.post(
+        'https://bfhl-backend-bu7d.onrender.com/bfhl',
+        parsed
+      );
       setResponse(res.data);
     } catch (err) {
       alert('Invalid JSON or server error');
@@ -20,7 +23,9 @@ function App() {
 
   const toggleSection = (section) => {
     setVisibleSections((prev) =>
-      prev.includes(section) ? prev.filter(s => s !== section) : [...prev, section]
+      prev.includes(section)
+        ? prev.filter((s) => s !== section)
+        : [...prev, section]
     );
   };
 
@@ -40,27 +45,38 @@ function App() {
 
       {response && (
         <>
-          <h2>Toggle Sections</h2>
-          <label>
+          {/* ==== NEW: Display basic info ==== */}
+          <div style={{ marginTop: 20 }}>
+            <p><strong>User ID:</strong> {response.user_id}</p>
+            <p><strong>Email:</strong> {response.email}</p>
+            <p><strong>Roll Number:</strong> {response.roll_number}</p>
+          </div>
+
+          {/* ==== Existing Toggle Sections ==== */}
+          <h2 style={{ marginTop: 20 }}>Toggle Sections</h2>
+          <label style={{ marginRight: 10 }}>
             <input
               type="checkbox"
               onChange={() => toggleSection('alphabets')}
               checked={visibleSections.includes('alphabets')}
-            /> Characters
+            />{' '}
+            Characters
           </label>
-          <label>
+          <label style={{ marginRight: 10 }}>
             <input
               type="checkbox"
               onChange={() => toggleSection('numbers')}
               checked={visibleSections.includes('numbers')}
-            /> Numbers
+            />{' '}
+            Numbers
           </label>
           <label>
             <input
               type="checkbox"
               onChange={() => toggleSection('highest_alphabet')}
               checked={visibleSections.includes('highest_alphabet')}
-            /> Highest Alphabet
+            />{' '}
+            Highest Alphabet
           </label>
 
           {visibleSections.includes('alphabets') && (
